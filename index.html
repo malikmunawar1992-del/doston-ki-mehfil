@@ -105,6 +105,7 @@
   .bubble .sender { font-size:12px; font-weight:700; margin-bottom:2px; }
   .bubble .meta { float:right; font-size:10.5px; color:#aebac1; margin:8px 0 0 10px; }
   .bubble audio { width:215px; height:36px; margin-top:2px; }
+  .bubble img { max-width:230px; width:100%; border-radius:10px; margin-top:2px; display:block; cursor:pointer; }
   .sys { align-self:center; background:#182229; color:#ffd279; font-size:12px; padding:5px 12px; border-radius:8px; margin:6px 0; }
   .empty-note { text-align:center; color:#8696a0; font-size:13.5px; margin-top:36px; line-height:1.75; padding:0 30px; }
   #recBar { display:none; align-items:center; gap:10px; background:#1f2c34; margin:0 8px 6px; padding:10px 14px; border-radius:12px; font-size:14px; }
@@ -207,6 +208,8 @@
     </div>
     <div id="inputBar">
       <textarea id="msgInput" rows="1" placeholder="Message likhein…"></textarea>
+      <button class="round-btn" id="imgBtn" title="Picture bhejein (camera / gallery)">📷</button>
+      <input type="file" id="imgInput" accept="image/*" style="display:none">
       <button class="round-btn" id="micBtn" title="Voice message">🎤</button>
       <button class="round-btn" id="sendBtn" title="Bhejein">➤</button>
     </div>
@@ -393,7 +396,9 @@
     row.className = 'row ' + (mine ? 'me' : 'other');
     var inner = '<div class="bubble">';
     if(!mine) inner += '<div class="sender" style="color:'+colorFor(m.name||'')+'">' + escapeHtml(m.name || 'Dost') + '</div>';
-    if(m.type === 'voice' && m.audio){
+    if(m.type === 'image' && m.img){
+      inner += '<img src="' + m.img + '" alt="picture">';
+    } else if(m.type === 'voice' && m.audio){
       inner += '<audio controls preload="metadata" src="' + m.audio + '"></audio>';
     } else {
       inner += '<span>' + escapeHtml(m.text || '') + '</span>';
@@ -489,6 +494,36 @@
   }
   $('recCancel').onclick = function(){ stopRec(false); };
   $('recSend').onclick = function(){ stopRec(true); };
+
+  /* ---------- Picture sharing (camera / gallery) ---------- */
+  var imgInput = $('imgInput');
+  $('imgBtn').onclick = function(){ if(me) imgInput.click(); };
+  imgInput.addEventListener('change', function(){
+    var f = imgInput.files && imgInput.files[0];
+    imgInput.value = '';
+    if(!f || !me) return;
+    if(f.type.indexOf('image/') !== 0){ alert('Sirf picture wali file chunein.'); return; }
+    var url = URL.createObjectURL(f);
+    var im = new Image();
+    im.onload = function(){
+      URL.revokeObjectURL(url);
+      var maxDim = 1280;
+      var w = im.naturalWidth, h = im.naturalHeight;
+      var scale = Math.min(1, maxDim / Math.max(w, h));
+      var cw = Math.max(1, Math.round(w * scale)), ch = Math.max(1, Math.round(h * scale));
+      var cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+      cv.getContext('2d').drawImage(im, 0, 0, cw, ch);
+      var dataUrl = cv.toDataURL('image/jpeg', 0.82);
+      if(dataUrl.length >= 950000) dataUrl = cv.toDataURL('image/jpeg', 0.6);
+      if(dataUrl.length < 950000){
+        sendDoc({type:'image', img:dataUrl}).catch(function(){});
+      } else {
+        alert('Picture bohat bari hai — chhoti picture bhejein.');
+      }
+    };
+    im.onerror = function(){ URL.revokeObjectURL(url); alert('Picture khul nahi saki — dobara koshish karein.'); };
+    im.src = url;
+  });
 
   /* ---------- PWA: installable app ---------- */
   if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
