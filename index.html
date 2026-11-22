@@ -4,6 +4,14 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>Doston Ki Mehfil — Doston ki Chat</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#075e54">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Mehfil">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" href="icon-192.png">
 <style>
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
   html,body { height:100%; }
@@ -146,6 +154,7 @@
       <input id="passInput" type="password" placeholder="Kam az kam 6 characters" autocomplete="current-password">
       <div class="err" id="authErr"></div>
       <button class="auth-btn" id="authBtn">Account banayein</button>
+      <button class="auth-btn hidden" id="installBtn" style="background:#1f2c34;border:1px solid #00a884;box-shadow:none">📲 App Install karein</button>
       <div class="toggle-line" id="toggleLine">Pehle se account hai? <a id="toggleLink">Login karein</a></div>
       <div class="note">Ek dafa login karne ke baad dobara login nahi karna parega —<br>app aap ko khud pehchan legi. Messages hamesha mehfooz rahte hain. 🔒</div>
     </div>
@@ -167,6 +176,7 @@
       <div class="stat"><div class="n" id="statOnline">–</div><div class="l">Abhi Online</div></div>
       <div class="stat"><div class="n" id="statMsgs">–</div><div class="l">Messages</div></div>
     </div>
+    <div id="installRow" class="hidden" style="padding:12px 14px 0"><button id="installBtn2" style="width:100%;padding:10px;border:none;border-radius:10px;background:#00a884;color:#fff;font-weight:700;cursor:pointer">📲 App Install karein</button></div>
     <div class="s-label">MEMBERS</div>
     <div id="membersList"></div>
     <div id="meBar">
@@ -479,6 +489,18 @@
   }
   $('recCancel').onclick = function(){ stopRec(false); };
   $('recSend').onclick = function(){ stopRec(true); };
+
+  /* ---------- PWA: installable app ---------- */
+  if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
+  var deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault(); deferredPrompt = e;
+    var b1 = $('installBtn'); if(b1) b1.classList.remove('hidden');
+    var r = $('installRow'); if(r) r.classList.remove('hidden');
+  });
+  function doInstall(){ if(deferredPrompt){ deferredPrompt.prompt(); deferredPrompt = null; } }
+  var ib1 = $('installBtn'); if(ib1) ib1.onclick = doInstall;
+  var ib2 = $('installBtn2'); if(ib2) ib2.onclick = doInstall;
 
   setMode('signup');
 })();
